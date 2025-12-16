@@ -3734,14 +3734,15 @@ async function awardXP(score, scenario, clientType, evaluation, duration, aiFeed
             }
             
             const result = await auth.register(username, group, password);
-            if (result.success) {
-                alert('Регистрация успешна! Теперь войдите в систему.');
-                showLoginForm();
-                document.getElementById('loginUsername').value = username;
-            } else {
-                errorElement.textContent = result.message;
-                errorElement.style.display = 'block';
-            }
+if (result.success) {
+    alert(result.message); // "Регистрация успешна! Теперь войдите в систему."
+    showLoginForm();
+    document.getElementById('loginUsername').value = username;
+    document.getElementById('loginPassword').value = '';
+} else {
+    errorElement.textContent = result.message;
+    errorElement.style.display = 'block';
+}
         }
         
         async function handleLogin() {
