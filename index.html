@@ -1414,6 +1414,22 @@
             </div>
             
             <div id="registerForm" style="display: none;">
+                 <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+            <strong style="color: #856404; font-size: 13px;">ВНИМАНИЕ!</strong>
+        </div>
+        <p style="font-size: 12px; color: #856404; margin: 0;">
+            <strong>Запрещено:</strong> использовать реальные фамилии, матерные или оскорбительные слова в никнейме.<br>
+            <strong>Рекомендуем:</strong> Оператор_1, Спец_Иван, Агент_007
+        </p>
+    </div>
+    
+    <!-- Дальше все остальные поля как есть -->
+    <div class="form-group">
+        <label>Никнейм (будет отображаться в системе):</label>
+        <input type="text" id="registerUsername" placeholder="Придумайте никнейм (от 3 символов)">
+    </div>
                 <div class="form-group">
                     <label>Никнейм (будет отображаться в системе):</label>
                     <input type="text" id="registerUsername" placeholder="Придумайте никнейм (от 3 символов)">
@@ -1730,182 +1746,176 @@
                 return hash.toString(36);
             }
             
-            async register(username, group = '', password) {
-                try {
-                    const existing = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
-                    
-                    if (existing && existing.length > 0) {
-                        return { success: false, message: 'Пользователь с таким никнеймом уже существует' };
-                    }
-                    
-                    if (password.length < 6) {
-                        return { success: false, message: 'Пароль должен быть не менее 6 символов' };
-                    }
-                    
-                    const passwordHash = this.hashPassword(password);
-                    
-                    const newUser = {
-                        username: username.trim(),
-                        group_name: group.trim(),
-                        password_hash: passwordHash,
-                        role: 'user',
-                        stats: {
-                            currentLevel: 1,
-                            totalXP: 0,
-                            completedSessions: 0,
-                            totalScore: 0,
-                            averageScore: 0,
-                            currentStreak: 0,
-                            lastTrainingDate: null,
-                            registrationDate: new Date().toISOString(),
-                            achievementsUnlocked: ["first_blood"],
-                            clientTypesCompleted: {
-                                aggressive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-                                passive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-                                demanding: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-                                indecisive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-                                chatty: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 }
-                            },
-                            trainingHistory: [],
-                            vertical: group.trim(),
-                            trainerComments: [],
-                            dailySessions: 0,
-                            lastSessionDate: null
-                        }
-                    };
-                    
-                    const result = await this.supabaseRequest('users', 'POST', newUser);
-                     return { 
-        success: true, 
-        message: 'Регистрация успешна! Теперь войдите в систему.',
-        username: username
-    };
-} else {
-    return { success: false, message: 'Ошибка регистрации' };
-}
-                    if (result && result[0]) {
-let userStats = {
-    currentLevel: 1,
-    totalXP: 0,
-    completedSessions: 0,
-    totalScore: 0,
-    averageScore: 0,
-    currentStreak: 0,
-    lastTrainingDate: null,
-    registrationDate: new Date().toISOString(),
-    achievementsUnlocked: ["first_blood"],
-    clientTypesCompleted: {
-        aggressive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-        passive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-        demanding: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-        indecisive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
-        chatty: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 }
-    },
-    trainingHistory: [],
-    vertical: user.group_name,
-    trainerComments: [],
-    dailySessions: 0,
-    lastSessionDate: null
-};
-
-// Если в базе есть stats, объединяем с дефолтными
-if (user.stats) {
+async register(username, group = '', password) {
     try {
-        // Если stats - строка, парсим JSON
-        if (typeof user.stats === 'string') {
-            const parsedStats = JSON.parse(user.stats);
-            userStats = { ...userStats, ...parsedStats };
-        } else if (typeof user.stats === 'object') {
-            // Если уже объект
-            userStats = { ...userStats, ...user.stats };
+        const existing = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
+        
+        if (existing && existing.length > 0) {
+            return { success: false, message: 'Пользователь с таким никнеймом уже существует' };
         }
-    } catch (e) {
-        console.error('Ошибка парсинга stats:', e);
+        
+        if (password.length < 6) {
+            return { success: false, message: 'Пароль должен быть не менее 6 символов' };
+        }
+        
+        const passwordHash = this.hashPassword(password);
+        
+        const newUser = {
+            username: username.trim(),
+            group_name: group.trim(),
+            password_hash: passwordHash,
+            role: 'user',
+            stats: JSON.stringify({
+                currentLevel: 1,
+                totalXP: 0,
+                completedSessions: 0,
+                totalScore: 0,
+                averageScore: 0,
+                currentStreak: 0,
+                lastTrainingDate: null,
+                registrationDate: new Date().toISOString(),
+                achievementsUnlocked: ["first_blood"],
+                clientTypesCompleted: {
+                    aggressive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    passive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    demanding: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    indecisive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    chatty: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 }
+                },
+                trainingHistory: [],
+                vertical: group.trim(),
+                trainerComments: [],
+                dailySessions: 0,
+                lastSessionDate: null
+            })
+        };
+        
+        const response = await fetch(`${this.supabaseUrl}/rest/v1/users`, {
+            method: 'POST',
+            headers: {
+                'apikey': this.supabaseKey,
+                'Authorization': `Bearer ${this.supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(newUser)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Ошибка регистрации:', errorText);
+            return { success: false, message: 'Ошибка регистрации' };
+        }
+        
+        // УДАЛИТЕ ЭТУ ЧАСТЬ - НЕ СТАВИМ ПОЛЬЗОВАТЕЛЯ В ТЕКУЩЕГО
+        // НЕ АВТОРИЗУЕМ АВТОМАТИЧЕСКИ
+        
+        return { 
+            success: true, 
+            message: 'Регистрация успешна! Теперь войдите в систему.' 
+        };
+    } catch (error) {
+        console.error('Ошибка регистрации:', error);
+        return { success: false, message: 'Ошибка соединения с базой данных' };
     }
 }
 
-this.currentUser = {
-    id: user.id,
-    username: user.username,
-    group: user.group_name,
-    role: user.role || 'user',
-    stats: userStats  // ИСПРАВЛЕННАЯ СТАТИСТИКА
-};
-                        this.userRole = this.currentUser.role;
-                        this.isAuthenticated = true;
-                        localStorage.setItem('dialogue_currentUser', JSON.stringify(this.currentUser));
-                        return { success: true, user: this.currentUser };
-                    }
-                    
-                    return { success: false, message: 'Ошибка регистрации' };
-                } catch (error) {
-                    console.error('Ошибка регистрации:', error);
-                    return { success: false, message: 'Ошибка соединения с базой данных' };
-                }
-            }
-            
-            async login(username, password) {
-                try {
-                    const result = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
-                    
-                    if (result && result.length > 0) {
-                        const user = result[0];
-                        const passwordHash = this.hashPassword(password);
-                        
-                        if (username === 'admin' && password === '0c7540eb7e65b553ec1ba6b20de79608') {
-                            if (user.password_hash !== '0c7540eb7e65b553ec1ba6b20de79608') {
-                                return { success: false, message: 'Неверный пароль' };
-                            }
-                        } else if (user.password_hash !== passwordHash) {
-                            return { success: false, message: 'Неверный пароль' };
-                        }
-                        
-                        this.currentUser = {
-                            id: user.id,
-                            username: user.username,
-                            group: user.group_name,
-                            role: user.role || 'user',
-                            stats: user.stats
-                        };
-                        this.userRole = this.currentUser.role;
-                        this.isAuthenticated = true;
-                        localStorage.setItem('dialogue_currentUser', JSON.stringify(this.currentUser));
-                        return { success: true, user: this.currentUser };
-                    }
-                    
-                    return { success: false, message: 'Пользователь не найден' };
-                } catch (error) {
-                    console.error('Ошибка входа:', error);
-                    return { success: false, message: 'Ошибка соединения с базой данных' };
-                }
-            }
-            
-            async resetPassword(username, newPassword) {
-                try {
-                    const result = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
-                    
-                    if (result && result.length > 0) {
-                        if (newPassword.length < 6) {
-                            return { success: false, message: 'Пароль должен быть не менее 6 символов' };
-                        }
-                        
-                        const passwordHash = this.hashPassword(newPassword);
-                        
-                        await this.supabaseRequest(
-                            `users?id=eq.${result[0].id}`, 
-                            'PATCH', 
-                            { password_hash: passwordHash }
-                        );
-                        
-                        return { success: true, message: 'Пароль успешно изменен' };
-                    }
-                    
-                    return { success: false, message: 'Пользователь не найден' };
-                } catch (error) {
-                    console.error('Ошибка сброса пароля:', error);
-                    return { success: false, message: 'Ошибка соединения с базой данных' };
-                }
-            }
+async login(username, password) {
+    try {
+        const users = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
+        
+        if (!users || users.length === 0) {
+            return { success: false, message: 'Пользователь не найден' };
+        }
+        
+        const user = users[0];
+        const passwordHash = this.hashPassword(password);
+        
+        if (user.password_hash !== passwordHash) {
+            return { success: false, message: 'Неверный пароль' };
+        }
+        
+        // Парсим stats из строки JSON
+        let userStats;
+        try {
+            userStats = typeof user.stats === 'string' ? JSON.parse(user.stats) : user.stats;
+        } catch (e) {
+            userStats = {
+                currentLevel: 1,
+                totalXP: 0,
+                completedSessions: 0,
+                totalScore: 0,
+                averageScore: 0,
+                currentStreak: 0,
+                lastTrainingDate: null,
+                registrationDate: new Date().toISOString(),
+                achievementsUnlocked: ["first_blood"],
+                clientTypesCompleted: {
+                    aggressive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    passive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    demanding: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    indecisive: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 },
+                    chatty: { sessions: 0, totalXP: 0, totalScore: 0, avgScore: 0 }
+                },
+                trainingHistory: [],
+                vertical: user.group_name,
+                trainerComments: [],
+                dailySessions: 0,
+                lastSessionDate: null
+            };
+        }
+        
+        this.currentUser = {
+            id: user.id,
+            username: user.username,
+            group: user.group_name,
+            role: user.role || 'user',
+            stats: userStats
+        };
+        
+        this.userRole = this.currentUser.role;
+        this.isAuthenticated = true;
+        localStorage.setItem('dialogue_currentUser', JSON.stringify(this.currentUser));
+        
+        return { 
+            success: true, 
+            user: this.currentUser,
+            message: 'Вход выполнен успешно'
+        };
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        return { success: false, message: 'Ошибка соединения с базой данных' };
+    }
+}
+
+async resetPassword(username, newPassword) {
+    try {
+        const users = await this.supabaseRequest(`users?username=eq.${encodeURIComponent(username)}`);
+        
+        if (!users || users.length === 0) {
+            return { success: false, message: 'Пользователь не найден' };
+        }
+        
+        const user = users[0];
+        const passwordHash = this.hashPassword(newPassword);
+        
+        await fetch(`${this.supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+            method: 'PATCH',
+            headers: {
+                'apikey': this.supabaseKey,
+                'Authorization': `Bearer ${this.supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({ password_hash: passwordHash })
+        });
+        
+        return { success: true, message: 'Пароль успешно изменен' };
+    } catch (error) {
+        console.error('Ошибка сброса пароля:', error);
+        return { success: false, message: 'Ошибка изменения пароля' };
+    }
+}
             
 async saveUserStats(stats) {
     console.log('🔍 saveUserStats ВЫЗВАНА');
@@ -3675,13 +3685,19 @@ async function awardXP(score, scenario, clientType, evaluation, duration, aiFeed
             clearErrors();
         }
         
-        function clearErrors() {
-            document.getElementById('loginError').style.display = 'none';
-            document.getElementById('passwordMatchError').style.display = 'none';
-            document.getElementById('resetPasswordError').style.display = 'none';
-            const trainerError = document.getElementById('trainerLoginError');
-            if (trainerError) trainerError.style.display = 'none';
-        }
+function clearErrors() {
+    const loginError = document.getElementById('loginError');
+    if (loginError) {
+        loginError.style.display = 'none';
+        loginError.textContent = '';
+        loginError.style.color = '#dc3545'; // Возвращаем красный цвет по умолчанию
+    }
+    
+    document.getElementById('passwordMatchError').style.display = 'none';
+    document.getElementById('resetPasswordError').style.display = 'none';
+    const trainerError = document.getElementById('trainerLoginError');
+    if (trainerError) trainerError.style.display = 'none';
+}
         
         function togglePassword(fieldId, toggleElement) {
             const field = document.getElementById(fieldId);
@@ -3694,84 +3710,106 @@ async function awardXP(score, scenario, clientType, evaluation, duration, aiFeed
             }
         }
         
-        async function handleRegister() {
-            const username = document.getElementById('registerUsername').value.trim();
-            const group = document.getElementById('registerGroup').value;
-            const password = document.getElementById('registerPassword').value;
-            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-            const errorElement = document.getElementById('passwordMatchError');
-            
-            clearErrors();
-            
-            if (!username) {
-                errorElement.textContent = 'Введите никнейм';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            if (username.length < 3) {
-                errorElement.textContent = 'Никнейм должен быть не менее 3 символов';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            if (!group) {
-                errorElement.textContent = 'Выберите вертикаль';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            if (password.length < 6) {
-                errorElement.textContent = 'Пароль должен быть не менее 6 символов';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            if (password !== passwordConfirm) {
-                errorElement.textContent = 'Пароли не совпадают';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            const result = await auth.register(username, group, password);
-if (result.success) {
-    alert(result.message); // "Регистрация успешна! Теперь войдите в систему."
-    showLoginForm();
-    document.getElementById('loginUsername').value = username;
-    document.getElementById('loginPassword').value = '';
-} else {
-    errorElement.textContent = result.message;
-    errorElement.style.display = 'block';
-}
-        }
+async function handleRegister() {
+    const username = document.getElementById('registerUsername').value.trim();
+    const group = document.getElementById('registerGroup').value;
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    const errorElement = document.getElementById('passwordMatchError');
+    
+    clearErrors();
+    
+    if (!username) {
+        errorElement.textContent = 'Введите никнейм';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (username.length < 3) {
+        errorElement.textContent = 'Никнейм должен быть не менее 3 символов';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (!group) {
+        errorElement.textContent = 'Выберите вертикаль';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (password.length < 6) {
+        errorElement.textContent = 'Пароль должен быть не менее 6 символов';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (password !== passwordConfirm) {
+        errorElement.textContent = 'Пароли не совпадают';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    const result = await auth.register(username, group, password);
+    if (result.success) {
+        // Показываем сообщение об успешной регистрации
+        alert(result.message);
         
-        async function handleLogin() {
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const errorElement = document.getElementById('loginError');
-            
-            clearErrors();
-            
-            if (!username) {
-                errorElement.textContent = 'Введите никнейм';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            if (!password) {
-                errorElement.textContent = 'Введите пароль';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            const result = await auth.login(username, password);
-            if (result.success) {
-                auth.showMainApp();
-            } else {
-                errorElement.textContent = result.message;
-                errorElement.style.display = 'block';
-            }
-        }
+        // Переключаемся на форму входа
+        showLoginForm();
+        
+        // Заполняем поля логина зарегистрированными данными
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = password;
+        
+        // Показываем успешное сообщение
+        document.getElementById('loginError').textContent = 'Регистрация успешна! Войдите в систему.';
+        document.getElementById('loginError').style.color = '#28a745';
+        document.getElementById('loginError').style.display = 'block';
+        
+    } else {
+        errorElement.textContent = result.message;
+        errorElement.style.display = 'block';
+    }
+}
+
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorElement = document.getElementById('loginError');
+    
+    clearErrors();
+    
+    if (!username) {
+        errorElement.textContent = 'Введите никнейм';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    if (!password) {
+        errorElement.textContent = 'Введите пароль';
+        errorElement.style.display = 'block';
+        return;
+    }
+    
+    const result = await auth.login(username, password);
+    if (result.success) {
+        // Убедитесь, что пользователь сохранен
+        auth.currentUser = result.user;
+        auth.isAuthenticated = true;
+        auth.userRole = result.user.role;
+        
+        // Проверяем дневной лимит
+        checkAndResetDailyLimit();
+        
+        // Показываем главное приложение
+        auth.showMainApp();
+    } else {
+        errorElement.textContent = result.message;
+        errorElement.style.color = '#dc3545'; // Красный цвет для ошибок
+        errorElement.style.display = 'block';
+    }
+}
+        
         
         async function handleTrainerLogin() {
             const username = document.getElementById('trainerUsername').value.trim();
