@@ -2020,81 +2020,99 @@ async saveUserStats(stats) {
             }
             
             async getLeaderboard(filterVertical = 'all') {
+    try {
+        const users = await this.supabaseRequest('users?select=id,username,group_name,stats');
+        
+        if (!users || users.length === 0) {
+            return [];
+        }
+        
+        // Преобразуем данные в правильный формат
+        const leaderboard = users
+            .filter(user => {
+                if (filterVertical === 'all') return true;
+                return user.group_name === filterVertical;
+            })
+            .map(user => {
+                // Парсим stats из JSON
+                let userStats;
                 try {
-                    const users = await this.getAllUsers();
-                    
-                    let filteredUsers = users;
-                    if (filterVertical !== 'all') {
-                        filteredUsers = users.filter(user => user.group_name === filterVertical);
-                    }
-                    
-                    const leaderboard = filteredUsers.map(user => ({
-                        id: user.id,
-                        username: user.username,
-                        group: user.group_name,
-                        level: user.stats?.currentLevel || 1,
-                        sessions: user.stats?.completedSessions || 0,
-                        avgScore: user.stats?.averageScore || 0,
-                        xp: user.stats?.totalXP || 0
-                    }));
-                    
-                    leaderboard.sort((a, b) => b.xp - a.xp);
-                    return leaderboard.slice(0, 100);
-                } catch (error) {
-                    console.error('Ошибка получения рейтинга:', error);
-                    return [];
+                    userStats = typeof user.stats === 'string' ? 
+                        JSON.parse(user.stats) : 
+                        (user.stats || {});
+                } catch (e) {
+                    userStats = {};
+                    console.warn('Ошибка парсинга stats для пользователя', user.username, e);
                 }
-            }
+                
+                return {
+                    id: user.id,
+                    username: user.username,
+                    group: user.group_name || 'Без вертикали',
+                    level: userStats.currentLevel || 1,
+                    sessions: userStats.completedSessions || 0,
+                    avgScore: userStats.averageScore || 0,
+                    xp: userStats.totalXP || 0
+                };
+            })
+            .sort((a, b) => b.xp - a.xp);
+        
+        return leaderboard.slice(0, 100);
+    } catch (error) {
+        console.error('❌ Ошибка получения рейтинга:', error);
+        return [];
+    }
+}
             
-            async getSystemStats() {
-                try {
-                    const users = await this.getAllUsers();
-                    const sessions = await this.supabaseRequest('training_sessions?select=*');
-                    
-                    const today = new Date().toISOString().split('T')[0];
-                    const activeToday = new Set();
-                    
-                    if (sessions && Array.isArray(sessions)) {
-                        sessions.forEach(session => {
-                            if (session.date && session.date.includes(today)) {
-                                activeToday.add(session.user_id);
-                            }
-                        });
-                    }
-                    
-                    const totalSessions = sessions?.length || 0;
-                    const totalUsers = users.length;
-                    
-                    let totalScore = 0;
-                    let scoreCount = 0;
-                    
-                    if (sessions && Array.isArray(sessions)) {
-                        sessions.forEach(session => {
-                            if (session.score) {
-                                totalScore += session.score;
-                                scoreCount++;
-                            }
-                        });
-                    }
-                    
-                    const avgScore = scoreCount > 0 ? (totalScore / scoreCount) : 0;
-                    
-                    return {
-                        totalUsers,
-                        totalSessions,
-                        avgScore,
-                        activeToday: activeToday.size
-                    };
-                } catch (error) {
-                    console.error('Ошибка получения статистики системы:', error);
-                    return {
-                        totalUsers: 0,
-                        totalSessions: 0,
-                        avgScore: 0,
-                        activeToday: 0
-                    };
+async getSystemStats() {
+    try {
+        const users = await this.supabaseRequest('users?select=id,stats');
+        const sessions = await this.supabaseRequest('training_sessions?select=id,score,date,user_id');
+        
+        const today = new Date().toISOString().split('T')[0];
+        const activeToday = new Set();
+        
+        if (sessions && Array.isArray(sessions)) {
+            sessions.forEach(session => {
+                if (session.date && session.date.includes(today)) {
+                    activeToday.add(session.user_id);
                 }
-            }
+            });
+        }
+        
+        const totalSessions = sessions?.length || 0;
+        const totalUsers = users?.length || 0;
+        
+        let totalScore = 0;
+        let scoreCount = 0;
+        
+        if (sessions && Array.isArray(sessions)) {
+            sessions.forEach(session => {
+                if (session.score) {
+                    totalScore += session.score;
+                    scoreCount++;
+                }
+            });
+        }
+        
+        const avgScore = scoreCount > 0 ? (totalScore / scoreCount) : 0;
+        
+        return {
+            totalUsers,
+            totalSessions,
+            avgScore,
+            activeToday: activeToday.size
+        };
+    } catch (error) {
+        console.error('❌ Ошибка получения статистики системы:', error);
+        return {
+            totalUsers: 0,
+            totalSessions: 0,
+            avgScore: 0,
+            activeToday: 0
+        };
+    }
+}
             
             async getUserTrainingHistory(userId) {
                 try {
